@@ -1812,6 +1812,12 @@ static switch_status_t channel_receive_event(switch_core_session_t *session, swi
 		body = "";
 	}
 
+	switch_log_printf(
+		SWITCH_CHANNEL_LOG,
+		SWITCH_LOG_INFO,
+		"RECEIVED EVENT!: body=%s\n",
+		body);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
