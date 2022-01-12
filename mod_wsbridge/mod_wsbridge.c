@@ -1308,8 +1308,15 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 			channel_answer_channel(session);
 		}
 		break;
+	case SWITCH_MESSAGE_INDICATE_MESSAGE:
+		{
+			switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_DEBUG,"received message event: %s\n", (int)msg->string_arg);
+		}
+		break;
 	default:
-		switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_DEBUG,"received event: %d\n", (int)msg->message_id);
+		if (globals.debug) {
+			switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_DEBUG,"received event: %d\n", (int)msg->message_id);
+		}
 		break;
 	}
 
