@@ -193,7 +193,7 @@ static int wsbridge_callback_ws(struct lws *wsi, enum lws_callback_reasons reaso
 
 static struct lws_protocols WSBRIDGE_protocols[] = {
 	{
-		"WSBRIDGE",
+		NULL,
 		wsbridge_callback_ws,
 		0,
 	/* rx_buffer_size Docs:
