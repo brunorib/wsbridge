@@ -1314,8 +1314,8 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 		}
 		break;
 	default:
-		if (globals.debug) {
-			switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_DEBUG,"received event: %d\n", (int)msg->message_id);
+		{
+			switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_DEBUG,"received event: %s\n", msg->string_arg);
 		}
 		break;
 	}
