@@ -1311,11 +1311,12 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	case SWITCH_MESSAGE_INDICATE_MESSAGE:
 		{
 			switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_DEBUG,"received message event: %s\n", msg->string_array_arg[2]);
+			websocket_write_back(tech_pvt->wsi_wsbridge, LWS_WRITE_TEXT, msg->string_array_arg[2], strlen(msg->string_array_arg[2]));
 		}
 		break;
 	default:
-		{
-			switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_DEBUG,"received event: %s\n", msg->string_array_arg[2]);
+		if (globals.debug) {
+			switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_DEBUG,"received event: %d\n", (int)msg->message_id);
 		}
 		break;
 	}
