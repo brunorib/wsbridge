@@ -882,6 +882,8 @@ switch_status_t wsbridge_tech_init(private_t *tech_pvt, switch_core_session_t *s
 	switch_mutex_init(&tech_pvt->wsi_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 	switch_mutex_init(&tech_pvt->dtmf_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 	switch_queue_create(&tech_pvt->dtmf_queue, DTMF_QUEUE_SIZE, switch_core_session_get_pool(session));
+	switch_mutex_init(&tech_pvt->event_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
+	switch_queue_create(&tech_pvt->event_queue, EVENT_QUEUE_SIZE, switch_core_session_get_pool(session));
 	switch_core_session_set_private(session, tech_pvt);
 	tech_pvt->session = session;
 
