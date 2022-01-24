@@ -718,6 +718,7 @@ wsbridge_callback_ws(struct lws *wsi, enum lws_callback_reasons reason,
 		}
 		switch_mutex_unlock(tech_pvt->dtmf_mutex);
 
+		/*
 		switch_mutex_lock(tech_pvt->event_mutex);
 
 		if (tech_pvt->has_event && (switch_queue_size(tech_pvt->event_queue))) {
@@ -741,7 +742,7 @@ wsbridge_callback_ws(struct lws *wsi, enum lws_callback_reasons reason,
 					get is garbage. So, we append a space as the first character.
 					And not, cJSON_Print (which prints pretty JSON), does not work
 					either */
-				/* 2 extra bytes, 1 for the terminator '\0' and another for the empty space */
+				/* 2 extra bytes, 1 for the terminator '\0' and another for the empty space /
 				size = strlen(parsed_message_unformatted);
 				bugfree_message = (char*) calloc(size + 2, sizeof(char));
 				assert (bugfree_message != NULL);
@@ -766,6 +767,7 @@ wsbridge_callback_ws(struct lws *wsi, enum lws_callback_reasons reason,
 			tech_pvt->has_event = FALSE;
 		}
 		switch_mutex_unlock(tech_pvt->event_mutex);
+		*/
 
 		switch_mutex_lock(tech_pvt->write_mutex);
 		/* Check if what we have in buffer is enough to compose a frame, and we're skewing */
@@ -1372,6 +1374,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 			char* event_message = msg->string_array_arg[2];
 			switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_DEBUG,"received message event: %s\n", event_message);
 
+			/*
 			// construct json?
 			if (!zstr(event_message)) {
 				switch_url_decode((char *)event_message);
@@ -1391,6 +1394,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 			}
 			tech_pvt->has_event = TRUE;
 			switch_mutex_unlock(tech_pvt->event_mutex);
+			*/
 		}
 		break;
 	default:
