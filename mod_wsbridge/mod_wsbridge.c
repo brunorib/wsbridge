@@ -93,6 +93,9 @@
 
 #define DTMF_QUEUE_SIZE 100 /*digits*/
 
+#define EVENT_QUEUE_SIZE 100
+#define EVENT_MESSAGE_MAX_SIZE  1024
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_wsbridge_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_wsbridge_shutdown);
 SWITCH_MODULE_DEFINITION(mod_wsbridge, mod_wsbridge_load, mod_wsbridge_shutdown, NULL);
@@ -168,6 +171,9 @@ struct private_object {
 	switch_bool_t has_dtmf;
 	switch_queue_t *dtmf_queue;
 	switch_mutex_t *dtmf_mutex;
+	switch_bool_t has_event;
+	switch_queue_t *event_queue;
+	switch_mutex_t *event_mutex;
 	unsigned int ws_counter_read; /*stats*/
 	unsigned int rtp_counter_write; /*stats*/
 	unsigned int ws_counter_write; /*stats*/
@@ -711,6 +717,58 @@ wsbridge_callback_ws(struct lws *wsi, enum lws_callback_reasons reason,
 			tech_pvt->has_dtmf = FALSE;
 		}
 		switch_mutex_unlock(tech_pvt->dtmf_mutex);
+
+		/*
+		switch_mutex_lock(tech_pvt->event_mutex);
+
+		if (tech_pvt->has_event && (switch_queue_size(tech_pvt->event_queue))) {
+			char* event_message[EVENT_MESSAGE_MAX_SIZE];
+			void *pop;
+
+			if (switch_queue_trypop(tech_pvt->event_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+				cJSON *parsed_message = NULL;
+				char *parsed_message_unformatted = NULL;
+				char *bugfree_message = NULL;
+				size_t size = 0;
+
+				event_message = (char *) pop;
+				parsed_message = cJSON_Parse(event_message);
+
+				//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Dequeue EVENT %c:%d | rate: %d | duration_ms: %u\n", dtmf->digit, dtmf->duration, rate, duration_ms);
+
+				parsed_message_unformatted = cJSON_PrintUnformatted(parsed_message); // this bug again ?
+				/* XXX EASY FIX FOR A STUPID BUG, look into this properly:
+					When the JSON structure is sent with no spaces, the audio we
+					get is garbage. So, we append a space as the first character.
+					And not, cJSON_Print (which prints pretty JSON), does not work
+					either */
+				/* 2 extra bytes, 1 for the terminator '\0' and another for the empty space /
+				size = strlen(parsed_message_unformatted);
+				bugfree_message = (char*) calloc(size + 2, sizeof(char));
+				assert (bugfree_message != NULL);
+
+				bugfree_message[0] = ' ';
+				strncpy(bugfree_message + 1, parsed_message_unformatted, size);
+
+				switch_log_printf(
+					SWITCH_CHANNEL_LOG,
+					SWITCH_LOG_INFO,
+					"WebSockets sending TEXT event: %s\n",
+					bugfree_message);
+
+				websocket_write_back(wsi, LWS_WRITE_TEXT, bugfree_message, strlen(bugfree_message));
+
+				cJSON_Delete(parsed_message);
+				free(bugfree_message);
+				switch_safe_free(pop);
+			}
+	
+			// everything has been dequeued. 
+			tech_pvt->has_event = FALSE;
+		}
+		switch_mutex_unlock(tech_pvt->event_mutex);
+		*/
+
 		switch_mutex_lock(tech_pvt->write_mutex);
 		/* Check if what we have in buffer is enough to compose a frame, and we're skewing */
 		if ((tech_pvt->write_count >= (tech_pvt->frame_sz * sizeof(int16_t))) && (tech_pvt->write_count <= tech_pvt->output_buffer_sz)) {
@@ -826,6 +884,8 @@ switch_status_t wsbridge_tech_init(private_t *tech_pvt, switch_core_session_t *s
 	switch_mutex_init(&tech_pvt->wsi_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 	switch_mutex_init(&tech_pvt->dtmf_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 	switch_queue_create(&tech_pvt->dtmf_queue, DTMF_QUEUE_SIZE, switch_core_session_get_pool(session));
+	switch_mutex_init(&tech_pvt->event_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
+	switch_queue_create(&tech_pvt->event_queue, EVENT_QUEUE_SIZE, switch_core_session_get_pool(session));
 	switch_core_session_set_private(session, tech_pvt);
 	tech_pvt->session = session;
 
@@ -1306,6 +1366,35 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
 		{
 			channel_answer_channel(session);
+		}
+		break;
+	case SWITCH_MESSAGE_INDICATE_MESSAGE:
+		{
+			//char parsed_event_message[EVENT_MESSAGE_MAX_SIZE];
+			//char* event_message = msg->string_array_arg[2];
+			switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_DEBUG,"received message event: %s\n", msg->string_array_arg[2]);
+
+			/*
+			// construct json?
+			if (!zstr(event_message)) {
+				switch_url_decode((char *)event_message);
+				wsbridge_str_remove_quotes(event_message);
+				if (strlen(event_message) < EVENT_MESSAGE_MAX_SIZE) {
+					parsed_event_message = malloc(sizeof(char) * EVENT_MESSAGE_MAX_SIZE);
+					switch_assert(parsed_event_message != NULL);
+					wsbridge_strncpy_null_term(parsed_event_message, event_message, EVENT_MESSAGE_MAX_SIZE);
+				}
+			}
+			
+			switch_mutex_lock(tech_pvt->event_mutex);
+			if ((switch_queue_trypush(tech_pvt->event_queue, parsed_event_message)) != SWITCH_STATUS_SUCCESS) {
+				free(parsed_event_message);
+				switch_mutex_unlock(tech_pvt->event_mutex);
+				return SWITCH_STATUS_FALSE;
+			}
+			tech_pvt->has_event = TRUE;
+			switch_mutex_unlock(tech_pvt->event_mutex);
+			*/
 		}
 		break;
 	default:
