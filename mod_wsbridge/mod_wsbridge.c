@@ -1380,7 +1380,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 				}
 			}
 			
-			switch_mutex_lock(tech_pvt->event_mutex);
+			/*switch_mutex_lock(tech_pvt->event_mutex);
 			if ((switch_queue_trypush(tech_pvt->event_queue, parsed_event_message)) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_DEBUG,"error pushing queue\n");
 				free(parsed_event_message);
@@ -1389,7 +1389,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 			}
 			tech_pvt->has_event = TRUE;
 			switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_DEBUG,"pushed in queue\n");
-			switch_mutex_unlock(tech_pvt->event_mutex);
+			switch_mutex_unlock(tech_pvt->event_mutex);*/
 		}
 		break;
 	default:
