@@ -724,16 +724,21 @@ wsbridge_callback_ws(struct lws *wsi, enum lws_callback_reasons reason,
 			char* event_message;
 			void *pop;
 
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Dequeue EVENT\n");
+
 			if (switch_queue_trypop(tech_pvt->event_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 				cJSON *parsed_message = NULL;
 				char *parsed_message_unformatted = NULL;
 				char *bugfree_message = NULL;
 				size_t size = 0;
 
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Before parsing json\n");
+
+
 				event_message = (char *) pop;
 				parsed_message = cJSON_Parse(event_message);
 
-				//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Dequeue EVENT %c:%d | rate: %d | duration_ms: %u\n", dtmf->digit, dtmf->duration, rate, duration_ms);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Parsed json\n");
 
 				parsed_message_unformatted = cJSON_PrintUnformatted(parsed_message); // this bug again ?
 				size = strlen(parsed_message_unformatted);
@@ -1380,7 +1385,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 				}
 			}
 			
-			/*switch_mutex_lock(tech_pvt->event_mutex);
+			switch_mutex_lock(tech_pvt->event_mutex);
 			if ((switch_queue_trypush(tech_pvt->event_queue, parsed_event_message)) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_DEBUG,"error pushing queue\n");
 				free(parsed_event_message);
@@ -1389,7 +1394,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 			}
 			tech_pvt->has_event = TRUE;
 			switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_DEBUG,"pushed in queue\n");
-			switch_mutex_unlock(tech_pvt->event_mutex);*/
+			switch_mutex_unlock(tech_pvt->event_mutex);
 		}
 		break;
 	default:
