@@ -1373,6 +1373,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 				switch_url_decode((char *)event_message);
 				wsbridge_str_remove_quotes(event_message);
 				if (strlen(event_message) < EVENT_MESSAGE_MAX_SIZE) {
+					switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_DEBUG,"copyying\n");
 					parsed_event_message = (char*)malloc(sizeof(char) * EVENT_MESSAGE_MAX_SIZE);
 					switch_assert(parsed_event_message != NULL);
 					wsbridge_strncpy_null_term(parsed_event_message, event_message, EVENT_MESSAGE_MAX_SIZE);
@@ -1387,6 +1388,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 				return SWITCH_STATUS_FALSE;
 			}
 			tech_pvt->has_event = TRUE;
+			switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_DEBUG,"pushed in queue\n");
 			switch_mutex_unlock(tech_pvt->event_mutex);
 		}
 		break;
