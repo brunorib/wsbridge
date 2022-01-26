@@ -1388,7 +1388,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 						switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_DEBUG,"error pushing queue\n");
 						free(parsed_event_message);
 						switch_mutex_unlock(tech_pvt->event_mutex);
-						return SWITCH_STATUS_FALSE;
+						return SWITCH_STATUS_SUCCESS;
 					}
 					tech_pvt->has_event = TRUE;
 					switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_DEBUG,"pushed in queue\n");
