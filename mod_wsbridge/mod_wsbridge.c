@@ -736,17 +736,17 @@ wsbridge_callback_ws(struct lws *wsi, enum lws_callback_reasons reason,
 
 
 				event_message = (char *) pop;
-				parsed_message = cJSON_Parse(event_message);
+				//parsed_message = cJSON_Parse(event_message);
 
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Parsed json\n");
 
-				parsed_message_unformatted = cJSON_PrintUnformatted(parsed_message); // this bug again ?
-				size = strlen(parsed_message_unformatted);
+				//parsed_message_unformatted = cJSON_PrintUnformatted(parsed_message); // this bug again ?
+				size = strlen(event_message);
 				bugfree_message = (char*) calloc(size + 2, sizeof(char));
 				assert (bugfree_message != NULL);
 
 				bugfree_message[0] = ' ';
-				strncpy(bugfree_message + 1, parsed_message_unformatted, size);
+				strncpy(bugfree_message + 1, event_message, size);
 
 				switch_log_printf(
 					SWITCH_CHANNEL_LOG,
