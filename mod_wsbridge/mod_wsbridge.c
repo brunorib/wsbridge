@@ -1362,6 +1362,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 		break;
 	case SWITCH_MESSAGE_INDICATE_MESSAGE:
 		{
+			switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_DEBUG,"received message event\n");
 			char* parsed_event_message = NULL;
 			char* event_message = (char*)msg->string_array_arg[2];
 			switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_DEBUG,"received message event: %s\n", msg->string_array_arg[2]);
