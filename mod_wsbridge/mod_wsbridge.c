@@ -727,8 +727,8 @@ wsbridge_callback_ws(struct lws *wsi, enum lws_callback_reasons reason,
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Dequeue EVENT\n");
 
 			if (switch_queue_trypop(tech_pvt->event_queue, &pop) == SWITCH_STATUS_SUCCESS) {
-				//cJSON *parsed_message = NULL;
-				//char *parsed_message_unformatted = NULL;
+				cJSON *parsed_message = NULL;
+				char *parsed_message_unformatted = NULL;
 				char *bugfree_message = NULL;
 				size_t size = 0;
 
@@ -736,17 +736,22 @@ wsbridge_callback_ws(struct lws *wsi, enum lws_callback_reasons reason,
 
 
 				event_message = (char *) pop;
-				//parsed_message = cJSON_Parse(event_message);
+				parsed_message = cJSON_Parse(event_message);
 
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Parsed json\n");
+				if (parsed_message != NULL) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Parsed json\n");
+					// do stuff with json...
+					parsed_message_unformatted = cJSON_PrintUnformatted(parsed_message); // this bug again ?
+				} else {
+					parsed_message_unformatted = event_message;
+				}
 
-				//parsed_message_unformatted = cJSON_PrintUnformatted(parsed_message); // this bug again ?
-				size = strlen(event_message);
+				size = strlen(parsed_message_unformatted);
 				bugfree_message = (char*) calloc(size + 2, sizeof(char));
 				assert (bugfree_message != NULL);
 
 				bugfree_message[0] = ' ';
-				strncpy(bugfree_message + 1, event_message, size);
+				strncpy(bugfree_message + 1, parsed_message_unformatted, size);
 
 				switch_log_printf(
 					SWITCH_CHANNEL_LOG,
@@ -756,7 +761,7 @@ wsbridge_callback_ws(struct lws *wsi, enum lws_callback_reasons reason,
 
 				websocket_write_back(wsi, LWS_WRITE_TEXT, bugfree_message, strlen(bugfree_message));
 
-				//cJSON_Delete(parsed_message);
+				cJSON_Delete(parsed_message);
 				free(bugfree_message);
 				switch_safe_free(pop);
 			}
