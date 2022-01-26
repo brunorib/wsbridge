@@ -727,8 +727,8 @@ wsbridge_callback_ws(struct lws *wsi, enum lws_callback_reasons reason,
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Dequeue EVENT\n");
 
 			if (switch_queue_trypop(tech_pvt->event_queue, &pop) == SWITCH_STATUS_SUCCESS) {
-				cJSON *parsed_message = NULL;
-				char *parsed_message_unformatted = NULL;
+				//cJSON *parsed_message = NULL;
+				//char *parsed_message_unformatted = NULL;
 				char *bugfree_message = NULL;
 				size_t size = 0;
 
@@ -756,7 +756,7 @@ wsbridge_callback_ws(struct lws *wsi, enum lws_callback_reasons reason,
 
 				websocket_write_back(wsi, LWS_WRITE_TEXT, bugfree_message, strlen(bugfree_message));
 
-				cJSON_Delete(parsed_message);
+				//cJSON_Delete(parsed_message);
 				free(bugfree_message);
 				switch_safe_free(pop);
 			}
