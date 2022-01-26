@@ -1367,7 +1367,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 		break;
 	case SWITCH_MESSAGE_INDICATE_MESSAGE:
 		{
-			char* parsed_event_message = NULL;
+			char* parsed_event_message;
 			char* event_message = (char*)msg->string_array_arg[2];
 			switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_DEBUG,"received message event: %s\n", msg->string_array_arg[2]);
 
@@ -1379,22 +1379,23 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 				wsbridge_str_remove_quotes(event_message);
 				if (strlen(event_message) < EVENT_MESSAGE_MAX_SIZE) {
 					switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_DEBUG,"copyying\n");
-					parsed_event_message = (char*)malloc(sizeof(char) * EVENT_MESSAGE_MAX_SIZE);
+					parsed_event_message = (char*)calloc(EVENT_MESSAGE_MAX_SIZE, sizeof(char));
 					switch_assert(parsed_event_message != NULL);
 					wsbridge_strncpy_null_term(parsed_event_message, event_message, EVENT_MESSAGE_MAX_SIZE);
+
+					switch_mutex_lock(tech_pvt->event_mutex);
+					if ((switch_queue_trypush(tech_pvt->event_queue, parsed_event_message)) != SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_DEBUG,"error pushing queue\n");
+						free(parsed_event_message);
+						switch_mutex_unlock(tech_pvt->event_mutex);
+						return SWITCH_STATUS_FALSE;
+					}
+					tech_pvt->has_event = TRUE;
+					switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_DEBUG,"pushed in queue\n");
+					switch_mutex_unlock(tech_pvt->event_mutex);
 				}
 			}
 			
-			switch_mutex_lock(tech_pvt->event_mutex);
-			if ((switch_queue_trypush(tech_pvt->event_queue, parsed_event_message)) != SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_DEBUG,"error pushing queue\n");
-				free(parsed_event_message);
-				switch_mutex_unlock(tech_pvt->event_mutex);
-				return SWITCH_STATUS_FALSE;
-			}
-			tech_pvt->has_event = TRUE;
-			switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_DEBUG,"pushed in queue\n");
-			switch_mutex_unlock(tech_pvt->event_mutex);
 		}
 		break;
 	default:
