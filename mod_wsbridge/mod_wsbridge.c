@@ -734,7 +734,6 @@ wsbridge_callback_ws(struct lws *wsi, enum lws_callback_reasons reason,
 
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Before parsing json\n");
 
-
 				event_message = (char *) pop;
 				json_message = cJSON_Parse(event_message);
 
@@ -745,27 +744,26 @@ wsbridge_callback_ws(struct lws *wsi, enum lws_callback_reasons reason,
 					}
 					cJSON_AddItemToObject(json_message, "content-type", cJSON_CreateString(tech_pvt->content_type));
 					parsed_message_unformatted = cJSON_PrintUnformatted(json_message); // this bug again ?
-				} else {
-					parsed_message_unformatted = event_message;
-				}
 
-				size = strlen(parsed_message_unformatted);
-				bugfree_message = (char*) calloc(size + 2, sizeof(char));
-				assert (bugfree_message != NULL);
+					size = strlen(parsed_message_unformatted);
+					bugfree_message = (char*) calloc(size + 2, sizeof(char));
+					assert (bugfree_message != NULL);
 
-				bugfree_message[0] = ' ';
-				strncpy(bugfree_message + 1, parsed_message_unformatted, size);
+					bugfree_message[0] = ' ';
+					strncpy(bugfree_message + 1, parsed_message_unformatted, size);
 
-				switch_log_printf(
-					SWITCH_CHANNEL_LOG,
-					SWITCH_LOG_INFO,
-					"WebSockets sending TEXT event: %s\n",
-					bugfree_message);
+					switch_log_printf(
+						SWITCH_CHANNEL_LOG,
+						SWITCH_LOG_INFO,
+						"WebSockets sending JSON event: %s\n",
+						bugfree_message);
 
-				websocket_write_back(wsi, LWS_WRITE_TEXT, bugfree_message, strlen(bugfree_message));
+					websocket_write_back(wsi, LWS_WRITE_TEXT, bugfree_message, strlen(bugfree_message));
 
-				cJSON_Delete(json_message);
-				free(bugfree_message);
+					cJSON_Delete(json_message);
+					free(bugfree_message);
+				} 
+
 				switch_safe_free(pop);
 			}
 	
