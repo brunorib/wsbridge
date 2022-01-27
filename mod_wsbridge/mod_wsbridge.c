@@ -727,7 +727,7 @@ wsbridge_callback_ws(struct lws *wsi, enum lws_callback_reasons reason,
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Dequeue EVENT\n");
 
 			if (switch_queue_trypop(tech_pvt->event_queue, &pop) == SWITCH_STATUS_SUCCESS) {
-				cJSON *parsed_message = NULL;
+				cJSON *json_message = NULL;
 				char *parsed_message_unformatted = NULL;
 				char *bugfree_message = NULL;
 				size_t size = 0;
@@ -736,12 +736,15 @@ wsbridge_callback_ws(struct lws *wsi, enum lws_callback_reasons reason,
 
 
 				event_message = (char *) pop;
-				parsed_message = cJSON_Parse(event_message);
+				json_message = cJSON_Parse(event_message);
 
-				if (parsed_message != NULL) {
+				if (json_message != NULL) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Parsed json\n");
-					// do stuff with json...
-					parsed_message_unformatted = cJSON_PrintUnformatted(parsed_message); // this bug again ?
+					if (cJSON_GetObjectItem(json_message, "content-type")) {
+						cJSON_DeleteItemFromObject(json_message, "content-type");
+					}
+					cJSON_AddItemToObject(json_message, "content-type", cJSON_CreateString(tech_pvt->content_type));
+					parsed_message_unformatted = cJSON_PrintUnformatted(json_message); // this bug again ?
 				} else {
 					parsed_message_unformatted = event_message;
 				}
