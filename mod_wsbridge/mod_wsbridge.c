@@ -764,7 +764,7 @@ wsbridge_callback_ws(struct lws *wsi, enum lws_callback_reasons reason,
 
 				websocket_write_back(wsi, LWS_WRITE_TEXT, bugfree_message, strlen(bugfree_message));
 
-				cJSON_Delete(parsed_message);
+				cJSON_Delete(json_message);
 				free(bugfree_message);
 				switch_safe_free(pop);
 			}
