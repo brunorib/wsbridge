@@ -732,6 +732,7 @@ wsbridge_callback_ws(struct lws *wsi, enum lws_callback_reasons reason,
 				cJSON *json_message = NULL;
 				char *parsed_message_unformatted = NULL;
 				char *bugfree_message = NULL, *event_name;
+				int active = NULL;
 				size_t size = 0;
 
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Before parsing json\n");
@@ -747,9 +748,12 @@ wsbridge_callback_ws(struct lws *wsi, enum lws_callback_reasons reason,
 					cJSON_AddItemToObject(json_message, "content-type", cJSON_CreateString(tech_pvt->content_type));
 
 					event_name = cJSON_GetObjectItem(json_message, "event")->valuestring;
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Received event: [%s]\n", event_name);
 					if (!strcmp(event_name, "websocket:media:update")) {
+						active = cJSON_GetObjectItem(json_message, "active")->valueint;
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Media update active=[%d]\n", active);
 						switch_mutex_lock(tech_pvt->audio_active_mutex);
-						tech_pvt->audio_active = cJSON_GetObjectItem(json_message, "active")->valueint;
+						tech_pvt->audio_active = active;
 						switch_mutex_unlock(tech_pvt->audio_active_mutex);
 					}
 
