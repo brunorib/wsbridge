@@ -157,6 +157,8 @@ struct private_object {
 	struct lws_client_connect_info i;
 	char path[2048];
 	int state;
+	switch_bool_t audio_active;
+	switch_mutex_t *audio_active_mutex;
 	switch_buffer_t *ws_audio_buffer; // [WSBRIDGE_INPUT_BUFFER_SIZE];
 	/* This is the frame that we send on the RTP side*/
 	unsigned char *databuf; // [WSBRIDGE_FRAME_SIZE]; 
@@ -729,7 +731,7 @@ wsbridge_callback_ws(struct lws *wsi, enum lws_callback_reasons reason,
 			if (switch_queue_trypop(tech_pvt->event_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 				cJSON *json_message = NULL;
 				char *parsed_message_unformatted = NULL;
-				char *bugfree_message = NULL;
+				char *bugfree_message = NULL, *event_name;
 				size_t size = 0;
 
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Before parsing json\n");
@@ -743,6 +745,14 @@ wsbridge_callback_ws(struct lws *wsi, enum lws_callback_reasons reason,
 						cJSON_DeleteItemFromObject(json_message, "content-type");
 					}
 					cJSON_AddItemToObject(json_message, "content-type", cJSON_CreateString(tech_pvt->content_type));
+
+					event_name = cJSON_GetObjectItem(json_message, "event")->valuestring;
+					if (!strcmp(event_name, "websocket:media:update")) {
+						switch_mutex_lock(tech_pvt->audio_active_mutex);
+						tech_pvt->audio_active = cJSON_GetObjectItem(json_message, "active")->valueint;
+						switch_mutex_unlock(tech_pvt->audio_active_mutex);
+					}
+
 					parsed_message_unformatted = cJSON_PrintUnformatted(json_message); // this bug again ?
 
 					size = strlen(parsed_message_unformatted);
@@ -889,6 +899,7 @@ switch_status_t wsbridge_tech_init(private_t *tech_pvt, switch_core_session_t *s
 	switch_queue_create(&tech_pvt->dtmf_queue, DTMF_QUEUE_SIZE, switch_core_session_get_pool(session));
 	switch_mutex_init(&tech_pvt->event_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 	switch_queue_create(&tech_pvt->event_queue, EVENT_QUEUE_SIZE, switch_core_session_get_pool(session));
+	switch_mutex_init(&tech_pvt->audio_active_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 	switch_core_session_set_private(session, tech_pvt);
 	tech_pvt->session = session;
 
@@ -1296,6 +1307,16 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 		}
 		return SWITCH_STATUS_FALSE;
 	}
+
+	// if audio inactive, do not forward rtp to ws buffer...
+	switch_mutex_lock(tech_pvt->audio_active_mutex);
+	if (!tech_pvt->audio_active) {
+		if (globals.debug) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Skip reading RTP frame, audio is inactive\n");
+		}
+		return SWITCH_STATUS_SUCCESS;
+	}
+	switch_mutex_unlock(tech_pvt->audio_active_mutex);
 
 	if (globals.debug) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Reading RTP frame of size [%d]\n", frame->datalen);
