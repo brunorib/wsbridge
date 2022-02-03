@@ -731,7 +731,7 @@ wsbridge_callback_ws(struct lws *wsi, enum lws_callback_reasons reason,
 			if (switch_queue_trypop(tech_pvt->event_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 				cJSON *json_message = NULL;
 				char *parsed_message_unformatted = NULL;
-				char *bugfree_message = NULL, *event_name;
+				char *bugfree_message = NULL, *event_name = NULL;
 				int active = NULL;
 				size_t size = 0;
 
@@ -754,6 +754,7 @@ wsbridge_callback_ws(struct lws *wsi, enum lws_callback_reasons reason,
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Media update active=[%d]\n", active);
 						switch_mutex_lock(tech_pvt->audio_active_mutex);
 						tech_pvt->audio_active = active;
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Media update active=[%d]\n", tech_pvt->audio_active);
 						switch_mutex_unlock(tech_pvt->audio_active_mutex);
 					}
 
@@ -1291,6 +1292,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 {
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
+	switch_bool_t active;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -1314,13 +1316,14 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 
 	// if audio inactive, do not forward rtp to ws buffer...
 	switch_mutex_lock(tech_pvt->audio_active_mutex);
-	if (!tech_pvt->audio_active) {
+	active = tech_pvt->audio_active;
+	switch_mutex_unlock(tech_pvt->audio_active_mutex);
+	if (!active) {
 		if (globals.debug) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Skip reading RTP frame, audio is inactive\n");
 		}
 		return SWITCH_STATUS_SUCCESS;
 	}
-	switch_mutex_unlock(tech_pvt->audio_active_mutex);
 
 	if (globals.debug) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Reading RTP frame of size [%d]\n", frame->datalen);
