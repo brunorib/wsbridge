@@ -907,6 +907,7 @@ switch_status_t wsbridge_tech_init(private_t *tech_pvt, switch_core_session_t *s
 	switch_mutex_init(&tech_pvt->audio_active_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 	switch_core_session_set_private(session, tech_pvt);
 	tech_pvt->session = session;
+	tech_pvt->audio_active = TRUE;
 
 	memset(&tech_pvt->i, 0, sizeof(tech_pvt->i));
 
