@@ -37,6 +37,7 @@
 #include <switch.h>
 #include <switch_json.h>
 #include <libwebsockets.h>
+//#pragma GCC diagnostic ignored "-Wstringop-truncation"
 
 /*
  * Design Notes
@@ -103,6 +104,41 @@ SWITCH_MODULE_DEFINITION(mod_wsbridge, mod_wsbridge_load, mod_wsbridge_shutdown,
 switch_endpoint_interface_t *wsbridge_endpoint_interface;
 static switch_memory_pool_t *module_pool = NULL;
 static int running = 1;
+
+struct Queue {
+	switch_queue_t *queue;
+	switch_mutex_t *mutex;
+	unsigned int count;
+	unsigned int size;
+};
+
+void Queue_create(struct Queue *q, unsigned int capacity, switch_memory_pool_t *memory_pool) {
+	q->count = 0;
+	q->size = capacity;
+	switch_queue_create(&q->queue, q->size, memory_pool);
+	switch_mutex_init(&q->mutex, SWITCH_MUTEX_NESTED, memory_pool);
+}
+
+switch_status_t Queue_push(struct Queue *q, void *data) {
+	switch_status_t rv = SWITCH_STATUS_FALSE;
+	switch_mutex_lock(q->mutex);
+	if ((q->count < q->size) && ((rv = switch_queue_trypush(q->queue, data)) == SWITCH_STATUS_SUCCESS)) {
+		q->count++;
+	}
+	switch_mutex_unlock(q->mutex);
+	return rv;
+}
+
+switch_status_t Queue_pop(struct Queue *q, void **data) {
+	switch_status_t rv = SWITCH_STATUS_FALSE;
+	*data = NULL;
+	switch_mutex_lock(q->mutex);
+	if ((q->count > 0) && ((rv = switch_queue_trypop(q->queue, data)) == SWITCH_STATUS_SUCCESS)) {
+		q->count--;
+	}
+	switch_mutex_unlock(q->mutex);
+	return rv;
+}
 
 typedef enum {
 	GFLAG_MY_CODEC_PREFS = (1 << 0)
@@ -173,9 +209,8 @@ struct private_object {
 	switch_bool_t has_dtmf;
 	switch_queue_t *dtmf_queue;
 	switch_mutex_t *dtmf_mutex;
-	switch_bool_t has_event;
-	switch_queue_t *event_queue;
-	switch_mutex_t *event_mutex;
+	struct Queue eventQueue;
+	struct Queue *myq;
 	unsigned int ws_counter_read; /*stats*/
 	unsigned int rtp_counter_write; /*stats*/
 	unsigned int ws_counter_write; /*stats*/
@@ -453,7 +488,6 @@ wsbridge_callback_ws(struct lws *wsi, enum lws_callback_reasons reason,
 	size_t n;
 	int size;
 	size_t wlen = len;
-	char *ws_uri = NULL , *ws_content_type = NULL , *ws_headers = NULL;
 
 
 	switch (reason) {
@@ -489,16 +523,6 @@ wsbridge_callback_ws(struct lws *wsi, enum lws_callback_reasons reason,
 
 		channel = switch_core_session_get_channel(session);
 		assert(channel != NULL);
-		ws_uri =  (char*) switch_channel_get_variable(channel, HEADER_WS_URI);
-		ws_headers = (char*) switch_channel_get_variable(channel, HEADER_WS_HEADERS);
-		ws_content_type = (char*) switch_channel_get_variable(channel, HEADER_WS_CONT_TYPE);
-		switch_log_printf(
-			SWITCH_CHANNEL_SESSION_LOG(session),
-			SWITCH_LOG_INFO,
-			"SIP headers, URI [%s], HEADERS [%s], CONTENT-TYPE [%s]",
-			ws_uri,
-			ws_headers,
-			ws_content_type);
 
 		switch_channel_mark_answered(channel);
 
@@ -768,13 +792,10 @@ wsbridge_callback_ws(struct lws *wsi, enum lws_callback_reasons reason,
 		}
 		switch_mutex_unlock(tech_pvt->dtmf_mutex);
 
-		switch_mutex_lock(tech_pvt->event_mutex);
-
-		if (tech_pvt->has_event && (switch_queue_size(tech_pvt->event_queue))) {
-			// get event
+		{
 			char* event_message = NULL;
 			void* pop;
-			if (switch_queue_trypop(tech_pvt->event_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+			if (Queue_pop(&tech_pvt->eventQueue, &pop) == SWITCH_STATUS_SUCCESS) {
 				event_message = (char *) pop;
 			}
 			// parse json
@@ -795,9 +816,7 @@ wsbridge_callback_ws(struct lws *wsi, enum lws_callback_reasons reason,
 			}
 			switch_safe_free(pop);
 			// everything has been dequeued. 
-			tech_pvt->has_event = FALSE;
 		}
-		switch_mutex_unlock(tech_pvt->event_mutex);
 
 		switch_mutex_lock(tech_pvt->write_mutex);
 		/* Check if what we have in buffer is enough to compose a frame, and we're skewing */
@@ -914,8 +933,7 @@ switch_status_t wsbridge_tech_init(private_t *tech_pvt, switch_core_session_t *s
 	switch_mutex_init(&tech_pvt->wsi_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 	switch_mutex_init(&tech_pvt->dtmf_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 	switch_queue_create(&tech_pvt->dtmf_queue, DTMF_QUEUE_SIZE, switch_core_session_get_pool(session));
-	switch_mutex_init(&tech_pvt->event_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
-	switch_queue_create(&tech_pvt->event_queue, EVENT_QUEUE_SIZE, switch_core_session_get_pool(session));
+	Queue_create(&tech_pvt->eventQueue, EVENT_QUEUE_SIZE, switch_core_session_get_pool(session));
 	switch_mutex_init(&tech_pvt->audio_active_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 	switch_core_session_set_private(session, tech_pvt);
 	tech_pvt->session = session;
@@ -960,16 +978,12 @@ char* parse_event(char* event_message) {
 }
 
 void add_event_to_queue(private_t *tech_pvt, char* parsed_event_message) {
-	switch_mutex_lock(tech_pvt->event_mutex);
-	if ((switch_queue_trypush(tech_pvt->event_queue, parsed_event_message)) != SWITCH_STATUS_SUCCESS) {
+	if ((Queue_push(&tech_pvt->eventQueue, parsed_event_message)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_DEBUG,"error pushing queue\n");
 		free(parsed_event_message);
-		switch_mutex_unlock(tech_pvt->event_mutex);
 		return;
 	}
-	tech_pvt->has_event = TRUE;
 	switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_DEBUG,"pushed in queue\n");
-	switch_mutex_unlock(tech_pvt->event_mutex);
 }
 
 /*
@@ -1007,6 +1021,44 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "WSBridge: number of current calls: %d\n", globals.calls);
+
+	{
+		/***** TEST CODE *****/
+
+		// start with empty queue
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "count = [%d] size = [%d]\n",
+						  tech_pvt->eventQueue.count,
+						  switch_queue_size(tech_pvt->eventQueue.queue));
+
+		// push elements on the queue
+		Queue_push(&tech_pvt->eventQueue, strdup("event1"));
+		Queue_push(&tech_pvt->eventQueue, strdup("event2"));
+		Queue_push(&tech_pvt->eventQueue, strdup("event3"));
+		Queue_push(&tech_pvt->eventQueue, strdup("event4"));
+		Queue_push(&tech_pvt->eventQueue, strdup("event5"));
+
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "count = [%d] size = [%d]\n",
+						  tech_pvt->eventQueue.count,
+						  switch_queue_size(tech_pvt->eventQueue.queue));
+
+		{
+			// drain the queue
+			void* data;
+			while (1) {
+				if (Queue_pop(&tech_pvt->eventQueue, &data) == SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "popped = [%s]\n", (const char*)data);
+					switch_safe_free(data);
+					continue;
+				}
+				break;
+			}
+		}
+
+		// queue is empty
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "count = [%d] size = [%d]\n",
+						  tech_pvt->eventQueue.count,
+						  switch_queue_size(tech_pvt->eventQueue.queue));
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1498,7 +1550,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		struct lws_context *context;
 		cJSON* json_req = NULL;
 
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_CRIT, "HELLO\n");
 		switch_core_session_add_stream(*new_session, NULL);
 		if ((tech_pvt = (private_t *) switch_core_session_alloc(*new_session, sizeof(private_t))) != 0) {
 			new_channel = switch_core_session_get_channel(*new_session);
@@ -1512,21 +1563,11 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		if (session) {
 			channel = switch_core_session_get_channel(session);
 			assert(channel != NULL);
+		} 
+		if (channel) {
 			ws_uri =  (char*) switch_channel_get_variable(channel, HEADER_WS_URI);
 			ws_headers = (char*) switch_channel_get_variable(channel, HEADER_WS_HEADERS);
 			ws_content_type = (char*) switch_channel_get_variable(channel, HEADER_WS_CONT_TYPE);
-		} else if (new_channel) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_CRIT, "INSIDE NEW CHANNEL\n");
-			ws_uri =  (char*) switch_channel_get_variable(new_channel, HEADER_WS_URI);
-			ws_headers = (char*) switch_channel_get_variable(new_channel, HEADER_WS_HEADERS);
-			ws_content_type = (char*) switch_channel_get_variable(new_channel, HEADER_WS_CONT_TYPE);
-			switch_log_printf(
-				SWITCH_CHANNEL_SESSION_LOG(*new_session),
-				SWITCH_LOG_INFO,
-				"SIP headers, URI [%s], HEADERS [%s], CONTENT-TYPE [%s]",
-				ws_uri,
-				ws_headers,
-				ws_content_type);
 		}
 
 		if (!ws_uri) {
