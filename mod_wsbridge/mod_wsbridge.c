@@ -107,23 +107,17 @@ static int running = 1;
 struct Queue {
 	switch_queue_t *queue;
 	switch_mutex_t *mutex;
-	unsigned int count;
-	unsigned int size;
 };
 
 void Queue_create(struct Queue *q, unsigned int capacity, switch_memory_pool_t *memory_pool) {
-	q->count = 0;
-	q->size = capacity;
-	switch_queue_create(&q->queue, q->size, memory_pool);
+	switch_queue_create(&q->queue, capacity, memory_pool);
 	switch_mutex_init(&q->mutex, SWITCH_MUTEX_NESTED, memory_pool);
 }
 
 switch_status_t Queue_push(struct Queue *q, void *data) {
 	switch_status_t rv = SWITCH_STATUS_FALSE;
 	switch_mutex_lock(q->mutex);
-	if ((q->count < q->size) && ((rv = switch_queue_trypush(q->queue, data)) == SWITCH_STATUS_SUCCESS)) {
-		q->count++;
-	}
+	rv = switch_queue_trypush(q->queue, data);
 	switch_mutex_unlock(q->mutex);
 	return rv;
 }
@@ -132,9 +126,7 @@ switch_status_t Queue_pop(struct Queue *q, void **data) {
 	switch_status_t rv = SWITCH_STATUS_FALSE;
 	*data = NULL;
 	switch_mutex_lock(q->mutex);
-	if ((q->count > 0) && ((rv = switch_queue_trypop(q->queue, data)) == SWITCH_STATUS_SUCCESS)) {
-		q->count--;
-	}
+	rv = switch_queue_trypop(q->queue, data);
 	switch_mutex_unlock(q->mutex);
 	return rv;
 }
@@ -436,6 +428,14 @@ int is_mute_event(char* event, char* method) {
 	return !strcmp(event, "websocket:media:update") && !strcmp(method, "update");
 }
 
+void reset_ws_write_indexes(private_t *tech_pvt) {
+	switch_mutex_lock(tech_pvt->write_mutex);
+	tech_pvt->write_count = 0;
+	tech_pvt->write_start = 0;
+	tech_pvt->write_end = 0;
+	switch_mutex_unlock(tech_pvt->write_mutex);
+}
+
 void on_event(private_t *tech_pvt, cJSON* json) {
 	char* event = NULL;
 	char* method = NULL;
@@ -445,10 +445,15 @@ void on_event(private_t *tech_pvt, cJSON* json) {
 	if (is_mute_event(event, method)) {
 		active = cJSON_GetObjectItem(json, "active")->valueint;
 		switch_mutex_lock(tech_pvt->audio_active_mutex);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setting channel status. active=[%d], string=[%s]\n", active, (char*)cJSON_GetObjectItem(json, "active")->valuestring);
 		tech_pvt->audio_active = active;
+		if(!active) {
+			reset_ws_write_indexes(tech_pvt);
+		}
 		switch_mutex_unlock(tech_pvt->audio_active_mutex);
 	}
 }
+
 
 void send_bugfree_json_message(struct lws *wsi, cJSON* json_message) {
 	char* parsed_message_unformatted = NULL;
@@ -791,16 +796,11 @@ wsbridge_callback_ws(struct lws *wsi, enum lws_callback_reasons reason,
 		switch_mutex_unlock(tech_pvt->dtmf_mutex);
 
 		{
-			char* event_message = NULL;
 			void* pop;
 			if (Queue_pop(&tech_pvt->eventQueue, &pop) == SWITCH_STATUS_SUCCESS) {
-				event_message = (char *) pop;
-			}
-			// parse json
-			if (event_message) {
 				cJSON *json_message;
 
-				json_message = cJSON_Parse(event_message);
+				json_message = cJSON_Parse((char *)pop);
 				if (json_message) {
 					// control json event
 					on_event(tech_pvt, json_message);
@@ -809,8 +809,8 @@ wsbridge_callback_ws(struct lws *wsi, enum lws_callback_reasons reason,
 					send_bugfree_json_message(wsi, json_message);
 				}
 				cJSON_Delete(json_message);
+				switch_safe_free(pop);
 			}
-			switch_safe_free(pop);
 		}
 
 		switch_mutex_lock(tech_pvt->write_mutex);
@@ -939,35 +939,26 @@ switch_status_t wsbridge_tech_init(private_t *tech_pvt, switch_core_session_t *s
 	return SWITCH_STATUS_SUCCESS;
 }
 
-cJSON* get_ws_headers(switch_channel_t *channel) {
-	if (channel) {
-		char *ws_headers = (char*) switch_channel_get_variable(channel, HEADER_WS_HEADERS);
-		if (!zstr(ws_headers)) {
-			switch_url_decode((char *)ws_headers);
-			wsbridge_str_remove_quotes(ws_headers);
-			if (strlen(ws_headers) < WS_HEADERS_MAX_SIZE) {
-				char parsed_ws_headers[WS_HEADERS_MAX_SIZE];
-				wsbridge_strncpy_null_term(parsed_ws_headers, ws_headers, WS_HEADERS_MAX_SIZE);
-				return cJSON_Parse(parsed_ws_headers);
-			}
+switch_status_t url_decode(char *src, char *dst, int size) {
+	switch_status_t rv = SWITCH_STATUS_FALSE;
+	if (!zstr(src)) {
+		switch_url_decode(src);
+		wsbridge_str_remove_quotes(src);
+		if (strlen(src) < size) {
+			wsbridge_strncpy_null_term(dst, src, size);
+			rv = SWITCH_STATUS_SUCCESS;
 		}
 	}
-	return NULL;
+	return rv;
 }
 
-char* parse_event(char* event_message) {
-	char* parsed_event_message = NULL;
-	if (!zstr(event_message)) {
-		switch_url_decode((char *)event_message);
-		wsbridge_str_remove_quotes(event_message);
-		if (strlen(event_message) < EVENT_MESSAGE_MAX_SIZE) {
-			parsed_event_message = (char*)calloc(EVENT_MESSAGE_MAX_SIZE, sizeof(char));
-			switch_assert(parsed_event_message != NULL);
-			wsbridge_strncpy_null_term(parsed_event_message, event_message, EVENT_MESSAGE_MAX_SIZE);
-		}
+cJSON* get_ws_headers(switch_channel_t *channel) {
+	char *ws_headers = (char*) switch_channel_get_variable(channel, HEADER_WS_HEADERS);
+	char parsed_ws_headers[WS_HEADERS_MAX_SIZE];
+	if (url_decode (ws_headers, parsed_ws_headers, sizeof(parsed_ws_headers)) == SWITCH_STATUS_SUCCESS) {
+		return cJSON_Parse(parsed_ws_headers);
 	}
-
-	return parsed_event_message;
+	return NULL;
 }
 
 /*
@@ -986,10 +977,6 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	assert(channel != NULL);
 	switch_set_flag_locked(tech_pvt, TFLAG_IO);
 
-	switch_mutex_lock(globals.mutex);
-	globals.calls++;
-	switch_mutex_unlock(globals.mutex);
-
 	if (cJSON_GetArraySize(tech_pvt->message) == 1 && cJSON_GetObjectItem(tech_pvt->message, "content-type")) {
 		cJSON* json_req = NULL;
 		if ((json_req = get_ws_headers(channel))) {
@@ -1004,6 +991,10 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 		}
 	}
 
+	switch_mutex_lock(globals.mutex);
+	globals.calls++;
+	switch_mutex_unlock(globals.mutex);
+	
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "WSBridge: number of current calls: %d\n", globals.calls);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1423,6 +1414,22 @@ static switch_status_t channel_answer_channel(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t channel_process_message(private_t *tech_pvt, char *event_message)
+{
+	switch_status_t rv = SWITCH_STATUS_FALSE;
+	int size = EVENT_MESSAGE_MAX_SIZE;
+	char *parsed_event_message = (char*)calloc(size, sizeof(char));
+	if (url_decode(event_message, parsed_event_message, size) == SWITCH_STATUS_SUCCESS) {
+		if ((rv = Queue_push(&tech_pvt->eventQueue, parsed_event_message)) != SWITCH_STATUS_SUCCESS) {
+			if (globals.debug) {
+				switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_DEBUG,"Could not push event to queue\n");
+			}
+			switch_safe_free(parsed_event_message);
+		}
+	}
+	return rv;
+}
+
 static switch_status_t channel_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)
 {
 	switch_channel_t *channel;
@@ -1442,18 +1449,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 		break;
 	case SWITCH_MESSAGE_INDICATE_MESSAGE:
 		{
-			char* parsed_event_message = NULL;
-			char* event_message = (char*)msg->string_array_arg[2];
-			parsed_event_message = parse_event(event_message);
-
-			if (parsed_event_message) {
-				if ((Queue_push(&tech_pvt->eventQueue, parsed_event_message)) != SWITCH_STATUS_SUCCESS) {
-					if (globals.debug) {
-						switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_DEBUG,"Could not push event to queue\n");
-					}
-					free(parsed_event_message);
-				}
-			}
+			channel_process_message(tech_pvt, (char*)msg->string_array_arg[2]);
 		}
 		break;
 	default:
@@ -2103,3 +2099,4 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_wsbridge_shutdown)
  * For VIM:
  * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */
+ 

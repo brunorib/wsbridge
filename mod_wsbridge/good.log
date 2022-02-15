@@ -1,0 +1,105 @@
+2022-02-08 08:29:21.572423 [DEBUG] switch_ivr_originate.c:2142 Parsing global variables
+2022-02-08 08:29:21.572423 [NOTICE] switch_channel.c:1104 New Channel wsbridge/wss://127.0.0.1:8089 [42be1a8f-1e66-44fc-bea0-eb63b6a7b27b]
+2022-02-08 08:29:21.612619 [DEBUG] mod_wsbridge.c:282 4 libuv support not compiled in
+2022-02-08 08:29:21.612619 [DEBUG] mod_wsbridge.c:282 4 Creating Vhost 'default' port -1, 1 protocols, IPv6 off
+2022-02-08 08:29:21.612619 [DEBUG] mod_wsbridge.c:282 4 created client ssl context for default
+2022-02-08 08:29:21.612619 [DEBUG] mod_wsbridge.c:282 4 lws_client_connect_2: 0x7fb97c04dbf0: address 127.0.0.1
+2022-02-08 08:29:21.612619 [DEBUG] mod_wsbridge.c:1811 (wsbridge/wss://127.0.0.1:8089) State Change CS_NEW -> CS_INIT
+2022-02-08 08:29:21.612619 [DEBUG] mod_wsbridge.c:282 4 lws_client_connect_2: 0x7fb97c04dbf0: address 127.0.0.1
+2022-02-08 08:29:21.612619 [DEBUG] switch_core_state_machine.c:584 (wsbridge/wss://127.0.0.1:8089) Running State Change CS_INIT (Cur 1 Tot 1)
+2022-02-08 08:29:21.612619 [DEBUG] switch_core_state_machine.c:627 (wsbridge/wss://127.0.0.1:8089) State INIT
+2022-02-08 08:29:21.612619 [DEBUG] mod_wsbridge.c:282 4 accepting self-signed certificate (verify_callback)
+2022-02-08 08:29:21.632256 [NOTICE] mod_wsbridge.c:501 wsbridge_callback_ws: tech_pvt->message = [{
+	    "content-type":	"audio/l16;rate=16000"
+}]
+2022-02-08 08:29:21.632256 [INFO] mod_wsbridge.c:516 WebSockets sending TEXT message:  {"content-type":"audio/l16;rate=16000"}
+2022-02-08 08:29:21.632256 [NOTICE] mod_wsbridge.c:525 Channel [wsbridge/wss://127.0.0.1:8089] has been answered
+2022-02-08 08:29:21.632256 [DEBUG] switch_channel.c:3773 (wsbridge/wss://127.0.0.1:8089) Callstate Change DOWN -> ACTIVE
+2022-02-08 08:29:21.632256 [NOTICE] mod_wsbridge.c:1002 channel_on_init: tech_pvt->message = [{
+	    "sec-websocket-protocol":       "sip",
+	    "content-type":	"audio/l16;rate=16000"
+}]
+2022-02-08 08:29:21.632256 [INFO] mod_wsbridge.c:1007 WSBridge: number of current calls: 1
+2022-02-08 08:29:21.632256 [DEBUG] switch_core_state_machine.c:40 wsbridge/wss://127.0.0.1:8089 Standard INIT
+2022-02-08 08:29:21.632256 [DEBUG] switch_core_state_machine.c:48 (wsbridge/wss://127.0.0.1:8089) State Change CS_INIT -> CS_ROUTING
+2022-02-08 08:29:21.632256 [DEBUG] switch_core_state_machine.c:627 (wsbridge/wss://127.0.0.1:8089) State INIT going to sleep
+2022-02-08 08:29:21.632256 [DEBUG] switch_core_state_machine.c:584 (wsbridge/wss://127.0.0.1:8089) Running State Change CS_ROUTING (Cur 1 Tot 1)
+2022-02-08 08:29:21.632256 [DEBUG] switch_core_state_machine.c:643 (wsbridge/wss://127.0.0.1:8089) State ROUTING
+2022-02-08 08:29:21.632256 [DEBUG] switch_ivr_originate.c:67 (wsbridge/wss://127.0.0.1:8089) State Change CS_ROUTING -> CS_CONSUME_MEDIA
+2022-02-08 08:29:21.632256 [DEBUG] switch_core_state_machine.c:643 (wsbridge/wss://127.0.0.1:8089) State ROUTING going to sleep
+2022-02-08 08:29:21.632256 [DEBUG] switch_core_state_machine.c:584 (wsbridge/wss://127.0.0.1:8089) Running State Change CS_CONSUME_MEDIA (Cur 1 Tot 1)
+2022-02-08 08:29:21.632256 [DEBUG] switch_core_state_machine.c:662 (wsbridge/wss://127.0.0.1:8089) State CONSUME_MEDIA
+2022-02-08 08:29:21.632256 [DEBUG] switch_core_state_machine.c:662 (wsbridge/wss://127.0.0.1:8089) State CONSUME_MEDIA going to sleep
+2022-02-08 08:29:21.632256 [DEBUG] switch_ivr_originate.c:3705 Originate Resulted in Success: [wsbridge/wss://127.0.0.1:8089]
+2022-02-08 08:29:21.632256 [INFO] switch_channel.c:3129 wsbridge/wss://127.0.0.1:8089 Flipping CID from "" <0000000000> to "Outbound Call" <8089>
+2022-02-08 08:29:21.632256 [DEBUG] mod_conference.c:1482 (wsbridge/wss://127.0.0.1:8089) State Change CS_CONSUME_MEDIA -> CS_EXECUTE
+2022-02-08 08:29:21.632256 [DEBUG] switch_core_state_machine.c:584 (wsbridge/wss://127.0.0.1:8089) Running State Change CS_EXECUTE (Cur 1 Tot 1)
+2022-02-08 08:29:21.632256 [DEBUG] switch_core_state_machine.c:650 (wsbridge/wss://127.0.0.1:8089) State EXECUTE
+2022-02-08 08:29:21.632256 [DEBUG] switch_core_state_machine.c:328 wsbridge/wss://127.0.0.1:8089 Standard EXECUTE
+EXECUTE wsbridge/wss://127.0.0.1:8089 conference(123)
+2022-02-08 08:29:21.632256 [DEBUG] conference_video.c:275 Adding layout group grid
+2022-02-08 08:29:21.632256 [DEBUG] conference_video.c:284 Adding node 1x1 to layout group grid
+2022-02-08 08:29:21.632256 [DEBUG] conference_video.c:284 Adding node 2x1 to layout group grid
+2022-02-08 08:29:21.632256 [DEBUG] conference_video.c:284 Adding node 1x1+2x1 to layout group grid
+2022-02-08 08:29:21.632256 [DEBUG] conference_video.c:284 Adding node 2x2 to layout group grid
+2022-02-08 08:29:21.632256 [DEBUG] conference_video.c:284 Adding node 3x3 to layout group grid
+2022-02-08 08:29:21.632256 [DEBUG] conference_video.c:284 Adding node 4x4 to layout group grid
+2022-02-08 08:29:21.632256 [DEBUG] conference_video.c:284 Adding node 5x5 to layout group grid
+2022-02-08 08:29:21.632256 [DEBUG] conference_video.c:284 Adding node 6x6 to layout group grid
+2022-02-08 08:29:21.632256 [DEBUG] conference_video.c:284 Adding node 8x8 to layout group grid
+2022-02-08 08:29:21.632256 [DEBUG] conference_video.c:275 Adding layout group grid-zoom
+2022-02-08 08:29:21.632256 [DEBUG] conference_video.c:284 Adding node 1x1 to layout group grid-zoom
+2022-02-08 08:29:21.632256 [DEBUG] conference_video.c:284 Adding node 2x1-zoom to layout group grid-zoom
+2022-02-08 08:29:21.632256 [DEBUG] conference_video.c:284 Adding node 3x1-zoom to layout group grid-zoom
+2022-02-08 08:29:21.632256 [DEBUG] conference_video.c:284 Adding node 2x2 to layout group grid-zoom
+2022-02-08 08:29:21.632256 [DEBUG] conference_video.c:284 Adding node 5-grid-zoom to layout group grid-zoom
+2022-02-08 08:29:21.632256 [DEBUG] conference_video.c:284 Adding node 3x2-zoom to layout group grid-zoom
+2022-02-08 08:29:21.632256 [DEBUG] conference_video.c:284 Adding node 7-grid-zoom to layout group grid-zoom
+2022-02-08 08:29:21.632256 [DEBUG] conference_video.c:284 Adding node 4x2-zoom to layout group grid-zoom
+2022-02-08 08:29:21.632256 [DEBUG] conference_video.c:284 Adding node 3x3 to layout group grid-zoom
+2022-02-08 08:29:21.632256 [DEBUG] conference_video.c:275 Adding layout group 1up_top_left_plus
+2022-02-08 08:29:21.632256 [DEBUG] conference_video.c:284 Adding node 1up_top_left+5 to layout group 1up_top_left_plus
+2022-02-08 08:29:21.632256 [DEBUG] conference_video.c:284 Adding node 1up_top_left+7 to layout group 1up_top_left_plus
+2022-02-08 08:29:21.632256 [DEBUG] conference_video.c:284 Adding node 1up_top_left+9 to layout group 1up_top_left_plus
+2022-02-08 08:29:21.632256 [DEBUG] conference_video.c:275 Adding layout group 3up_plus
+2022-02-08 08:29:21.632256 [DEBUG] conference_video.c:284 Adding node 3up+4 to layout group 3up_plus
+2022-02-08 08:29:21.632256 [DEBUG] conference_video.c:284 Adding node 3up+9 to layout group 3up_plus
+2022-02-08 08:29:21.632256 [WARNING] mod_conference.c:2978 No video-layout-name specified, using group:grid
+2022-02-08 08:29:21.632256 [DEBUG] mod_conference.c:3076 using channel sound prefix: /usr/local/freeswitch/sounds/en/us/callie
+2022-02-08 08:29:21.632256 [DEBUG] conference_video.c:1132 Canvas position 1 applied layout 1x1
+2022-02-08 08:29:21.632256 [DEBUG] conference_video.c:1222 Layout set to 1x1
+2022-02-08 08:29:21.632256 [DEBUG] conference_video.c:1182 Canvas attached to position 0
+2022-02-08 08:29:21.632256 [DEBUG] conference_video.c:1132 Canvas position 1 applied layout 1x1
+2022-02-08 08:29:21.632256 [DEBUG] conference_video.c:1222 Layout set to 1x1
+2022-02-08 08:29:21.632256 [DEBUG] conference_video.c:1182 Canvas attached to position 1
+2022-02-08 08:29:21.653379 [DEBUG] conference_video.c:1132 Canvas position 1 applied layout 1x1
+2022-02-08 08:29:21.653379 [DEBUG] conference_video.c:1222 Layout set to 1x1
+2022-02-08 08:29:21.653379 [DEBUG] conference_video.c:1182 Canvas attached to position 2
+2022-02-08 08:29:21.653379 [DEBUG] conference_member.c:1691 Raw Codec Activation Success L16@16000hz 1 channel 20ms
+2022-02-08 08:29:21.653379 [DEBUG] conference_member.c:1738 Raw Codec Activation Success L16@16000hz 1 channel 20ms
+2022-02-08 08:29:21.653379 [DEBUG] switch_core_codec.c:223 wsbridge/wss://127.0.0.1:8089 Push codec L16:100
+2022-02-08 08:29:21.653379 [DEBUG] mod_conference.c:220 Setup timer success interval: 20  samples: 320
+2022-02-08 08:29:21.673014 [DEBUG] conference_loop.c:1140 Setup timer soft success interval: 20  samples: 320 from codec L16
+2022-02-08 08:29:21.673014 [CONSOLE] sofia_presence.c:1619 Event Thread Started
+2022-02-08 08:29:21.673014 [DEBUG] conference_loop.c:1292 Outbound conference channel answered, setting CFLAG_ANSWERED
+
+
+2022-02-08 08:30:50.192162 [DEBUG] mod_wsbridge.c:282 8 Closing when error
+
+2022-02-08 08:30:50.192162 [DEBUG] mod_wsbridge.c:282 8 lws_same_vh_protocol_remove: removing same prot wsi 0x7fb97c04dbf0
+
+2022-02-08 08:30:50.192162 [DEBUG] mod_wsbridge.c:282 8 have prev 0x7fb97c04ae20, setting him to our next (nil)
+
+2022-02-08 08:30:50.192162 [DEBUG] mod_wsbridge.c:549 WebSockets callback: closed. wsi [0x7fb97c04dbf0]
+2022-02-08 08:30:50.192162 [NOTICE] mod_wsbridge.c:557 Hangup wsbridge/wss://127.0.0.1:8089 [CS_EXECUTE] [NORMAL_CLEARING]
+2022-02-08 08:30:50.192162 [DEBUG] mod_wsbridge.c:282 8 ah det due to close
+
+2022-02-08 08:30:50.192162 [INFO] conference_loop.c:1469 Channel leaving conference, cause: NORMAL_CLEARING
+2022-02-08 08:30:50.192162 [DEBUG] mod_conference.c:2247 wsbridge/wss://127.0.0.1:8089 skip receive message [UNBRIDGE] (channel is hungup already)
+2022-02-08 08:30:50.192162 [DEBUG] switch_core_media.c:9802 wsbridge/wss://127.0.0.1:8089 skip receive message [HARD_MUTE] (channel is hungup already)
+2022-02-08 08:30:50.192162 [DEBUG] switch_core_codec.c:248 wsbridge/wss://127.0.0.1:8089 Restore previous codec L16:100.
+2022-02-08 08:30:50.192162 [DEBUG] switch_core_session.c:2815 wsbridge/wss://127.0.0.1:8089 skip receive message [APPLICATION_EXEC_COMPLETE] (channel is hungup already)
+2022-02-08 08:30:50.192162 [DEBUG] switch_core_state_machine.c:650 (wsbridge/wss://127.0.0.1:8089) State EXECUTE going to sleep
+2022-02-08 08:30:50.192162 [DEBUG] switch_core_state_machine.c:584 (wsbridge/wss://127.0.0.1:8089) Running State Change CS_HANGUP (Cur 1 Tot 1)
+2022-02-08 08:30:50.192162 [DEBUG] switch_core_state_machine.c:850 (wsbridge/wss://127.0.0.1:8089) Callstate Change ACTIVE -> HANGUP
+2022-02-08 08:30:50.192162 [DEBUG] switch_core_state_machine.c:852 (wsbridge/wss://127.0.0.1:8089) State HANGUP

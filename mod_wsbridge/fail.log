@@ -1,0 +1,6 @@
+2022-02-14T18:16:22.870+01:00	sip-qa-0-switch-0-us-east-1.tokbox.com	41910652-368c-4e0d-b0d7-30e59aea1aba	-	DESTINATION_OUT_OF_ORDER	ChannelDestroyed	-1	-1	42c641f3-cc7d-4e3e-accc-bd44a85978ec
+	2022-02-14T18:16:22.869+01:00	sip-qa-0-switch-0-us-east-1.tokbox.com	41910652-368c-4e0d-b0d7-30e59aea1aba	-	-	ChannelUpdated	-1	-	42c641f3-cc7d-4e3e-accc-bd44a85978ec
+	2022-02-14T18:16:22.868+01:00	sip-qa-0-switch-0-us-east-1.tokbox.com	41910652-368c-4e0d-b0d7-30e59aea1aba	-	-	ChannelCreated	-	-	42c641f3-cc7d-4e3e-accc-bd44a85978ec
+	2022-02-14T18:14:07.000+01:00	sip-qa-0-switch-0-us-east-1.tokbox.com	6a62526b-e617-4d57-871c-ad9f36e8c4cc	-	NORMAL_CLEARING	ChannelDestroyed	1644858725160	122	0af2ebaa-5055-4f95-a620-f90930c55650
+	2022-02-14T18:14:06.998+01:00	sip-qa-0-switch-0-us-east-1.tokbox.com	6a62526b-e617-4d57-871c-ad9f36e8c4cc	-	-	ChannelUpdated	1644858725160	-	0af2ebaa-5055-4f95-a620-f90930c55650
+	2022-02-14T18:12:05.160+01:00	sip-qa-0-switch-0-us-east-1.tokbox.com	6a62526b-e617-4d57-871c-ad9f36e8c4cc	-	-	ChannelCreated	-	-	0af2ebaa-5055-4f95-a620-f90930c55650
