@@ -445,7 +445,7 @@ void on_event(private_t *tech_pvt, cJSON* json) {
 	if (is_mute_event(event, method)) {
 		active = cJSON_GetObjectItem(json, "active")->valueint;
 		switch_mutex_lock(tech_pvt->audio_active_mutex);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setting channel status. active=[%d], string=[%s]\n", active, (char*)cJSON_GetObjectItem(json, "active")->valuestring);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setting channel status. active=[%d], string=[%s]\n", active, (char*)cJSON_GetObjectItem(json, "active")->type);
 		tech_pvt->audio_active = active;
 		if(!active) {
 			reset_ws_write_indexes(tech_pvt);
@@ -2099,4 +2099,3 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_wsbridge_shutdown)
  * For VIM:
  * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */
- 
